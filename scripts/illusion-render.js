@@ -133,13 +133,18 @@ async function applyGMPreview(token, doc) {
 
 // Fully hides a token from a specific client without touching the synced document,
 // only ever restoring visibility if we were the one who last forced it off (so we
-// never fight core's own fog-of-war/hidden-token visibility logic).
+// never fight core's own fog-of-war/hidden-token visibility logic). The token's
+// artwork (token.mesh) lives in a separate primary-canvas render group from the
+// token's own container (name/bars/border), so both need to be toggled - setting
+// only token.visible left the actual image fully visible to "invisible" players.
 function setHidden(token, hidden) {
   if (hidden) {
     token.visible = false;
+    if (token.mesh) token.mesh.visible = false;
     token._falseTokensHidden = true;
   } else if (token._falseTokensHidden) {
     token.visible = true;
+    if (token.mesh) token.mesh.visible = true;
     token._falseTokensHidden = false;
   }
 }

@@ -69,10 +69,12 @@ juist triggert, zonder elk token los te hoeven aanpassen.
   client-setting voor de DM-preview-toggle, en de scene-brede alles-aan/uit.
 - `scripts/illusion-render.js` — past clientside toe wat `illusion-data.js`
   bepaalt: PIXI-texture wisselen (`token.mesh.texture`) voor illusies,
-  `token.visible` uitzetten voor onzichtbaarheid, `token.mesh.alpha` verlagen
-  voor de GM's doorschijnende weergave, en het on-the-fly samenstellen van de
-  paars-getinte preview-afbeeldingen via een offscreen `<canvas>`. Texture-cache
-  zodat `refreshToken` (elke animatieframe) niet steeds opnieuw laadt/bouwt.
+  `token.visible` **en** `token.mesh.visible` uitzetten voor onzichtbaarheid
+  (het token zelf en zijn artwork zitten in aparte render-lagen — allebei nodig
+  om echt niets meer te tonen), `token.mesh.alpha` verlagen voor de GM's
+  doorschijnende weergave, en het on-the-fly samenstellen van de paars-getinte
+  preview-afbeeldingen via een offscreen `<canvas>`. Texture-cache zodat
+  `refreshToken` (elke animatieframe) niet steeds opnieuw laadt/bouwt.
 - `scripts/illusion-hud.js` — voegt het maskericoontje (rechts) en de
   DM-preview-toggle + scene-brede aan/uit-knoppen (links) toe aan de Token HUD.
 - `scripts/illusion-config-app.js` — het configuratievenster (ApplicationV2).
@@ -103,5 +105,5 @@ namespace en eigen icoontjes.
   devtools/console gebruikt kan dit uitlezen. Bewuste keuze voor eenvoud,
   in plaats van een GM-geautoriseerde (socket)aanpak die dat had voorkomen
   maar wel altijd een online GM vereist.
-- Type Invisible, de bijgewerkte DM-preview-kleuren en de scene-brede
-  aan/uit-knoppen zijn nieuw en nog niet live getest.
+- De bijgewerkte DM-preview-kleuren en de scene-brede aan/uit-knoppen zijn
+  nieuw en nog niet live getest.
