@@ -11,14 +11,19 @@ of **onzichtbaar** — met per-speler instelbaar wie het effect ondervindt.
 2. Klik erop om het configuratievenster te openen:
    - **Effect active** — hoofdschakelaar voor dit token.
    - **Type** — **Illusion** (andere afbeelding) of **Invisible** (onzichtbaar).
-   - Bij type Illusion:
-     - **Illusion image** — de nepafbeelding die aangevinkte spelers zien.
-     - **True image** — optioneel; leeg = de huidige tokenafbeelding.
-   - Onderaan: per-speler checkboxen. **Aangevinkt = die speler ondervindt het
-     effect** (ziet de illusie, of ziet het token bij Invisible helemaal niet).
-     Niet aangevinkt = die speler ziet gewoon de waarheid. Twee knoppen
-     ("Mark everyone" / "Clear everyone") zetten in één klik iedereen aan/uit.
+     Bij Illusion toont het venster ook **Illusion image**: de nepafbeelding
+     die aangevinkte spelers zien. Schakel je naar Invisible, dan verdwijnt
+     dat veld uit beeld — de eerder ingevulde afbeelding blijft gewoon bewaard
+     voor het geval je teruggaat naar Illusion.
+   - Onderaan ("Is affected" / "Cannot see this token"): per-speler
+     checkboxen. **Aangevinkt = die speler ondervindt het effect** (ziet de
+     illusie, of ziet het token bij Invisible helemaal niet). Niet aangevinkt
+     = die speler ziet gewoon de waarheid. Twee knoppen ("Mark everyone" /
+     "Clear everyone") zetten in één klik iedereen aan/uit.
 3. Wijzigingen worden direct toegepast (geen aparte opslaan-knop nodig).
+
+Er is geen UI meer voor een aparte "ware afbeelding": de huidige
+tokenafbeelding is altijd de waarheid.
 
 ### Invisible
 
@@ -47,13 +52,21 @@ GM voor elk geïllusioneerd token ziet:
 Deselecteer de spelertoken(s), of zet de toggle uit, om terug te gaan naar de
 normale GM-weergave.
 
+### Scene-brede aan/uit
+
+Ernaast staan nog twee knoppen in de linkerkolom: een grote "alles aan" en
+"alles uit" toggle. Die zet in één klik **elk geconfigureerd effect in de
+huidige scene** (illusie én invisible, op alle tokens) actief of inactief —
+handig voor het moment dat een illusie voor de hele groep tegelijk breekt of
+juist triggert, zonder elk token los te hoeven aanpassen.
+
 ## Structuur
 
 - `module.json` — manifest (v13+, systeem `dnd5e`).
 - `scripts/illusion-data.js` — dataflag op de TokenDocument
   (`flags.false-tokens.illusion`: `active`, `type`, `illusionImg`, `trueImg`,
-  `fooled`) en de logica die per gebruiker bepaalt wat die moet zien, plus de
-  client-setting voor de DM-preview-toggle.
+  `fooled`) en de logica die per gebruiker bepaalt wat die moet zien, de
+  client-setting voor de DM-preview-toggle, en de scene-brede alles-aan/uit.
 - `scripts/illusion-render.js` — past clientside toe wat `illusion-data.js`
   bepaalt: PIXI-texture wisselen (`token.mesh.texture`) voor illusies,
   `token.visible` uitzetten voor onzichtbaarheid, `token.mesh.alpha` verlagen
@@ -61,7 +74,7 @@ normale GM-weergave.
   paars-getinte preview-afbeeldingen via een offscreen `<canvas>`. Texture-cache
   zodat `refreshToken` (elke animatieframe) niet steeds opnieuw laadt/bouwt.
 - `scripts/illusion-hud.js` — voegt het maskericoontje (rechts) en de
-  DM-preview-toggle (links) toe aan de Token HUD.
+  DM-preview-toggle + scene-brede aan/uit-knoppen (links) toe aan de Token HUD.
 - `scripts/illusion-config-app.js` — het configuratievenster (ApplicationV2).
 - `scripts/illusion-combat-tracker.js` — vervangt clientside de portret-`<img>`
   in de Combat Tracker (ook popped-out trackers) voor het Illusion-type,
@@ -90,5 +103,5 @@ namespace en eigen icoontjes.
   devtools/console gebruikt kan dit uitlezen. Bewuste keuze voor eenvoud,
   in plaats van een GM-geautoriseerde (socket)aanpak die dat had voorkomen
   maar wel altijd een online GM vereist.
-- Type Invisible en de bijgewerkte DM-preview-kleuren zijn nieuw en nog niet
-  live getest.
+- Type Invisible, de bijgewerkte DM-preview-kleuren en de scene-brede
+  aan/uit-knoppen zijn nieuw en nog niet live getest.

@@ -51,6 +51,24 @@ export async function setIllusion(tokenDocument, data) {
   return tokenDocument.setFlag(MODULE_ID, FLAG_KEY, data);
 }
 
+/**
+ * Scene-wide master switch: activate or deactivate every configured effect
+ * (illusion or invisible) on the current scene in one go, e.g. for "the
+ * illusion breaks" or "it triggers for the whole party" moments.
+ */
+export async function setSceneIllusionsActive(active) {
+  const scene = canvas.scene;
+  if (!scene) return;
+
+  const updates = [];
+  for (const tokenDocument of scene.tokens) {
+    const illusion = getIllusion(tokenDocument);
+    if (!illusion || illusion.active === active) continue;
+    updates.push({ _id: tokenDocument.id, [`flags.${MODULE_ID}.${FLAG_KEY}.active`]: active });
+  }
+  if (updates.length) await scene.updateEmbeddedDocuments("Token", updates);
+}
+
 export function isGMPreviewEnabled() {
   return game.settings.get(MODULE_ID, SETTING_GM_PREVIEW);
 }

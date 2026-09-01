@@ -63,8 +63,6 @@ export class IllusionConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       active: illusion.active ?? false,
       isInvisible,
       illusionImg: illusion.illusionImg ?? "",
-      trueImg: illusion.trueImg ?? "",
-      trueImgPlaceholder: this.tokenDocument.texture.src,
       users,
     };
   }
@@ -94,14 +92,17 @@ export class IllusionConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onSubmit(event, form, formData) {
     const data = foundry.utils.expandObject(formData.object);
+    const existing = getIllusion(this.tokenDocument) ?? {};
     const fooled = Object.entries(data.fooled ?? {})
       .filter(([, checked]) => checked)
       .map(([id]) => id);
     await setIllusion(this.tokenDocument, {
       active: !!data.active,
       type: data.type === "invisible" ? "invisible" : "illusion",
-      illusionImg: data.illusionImg ?? "",
-      trueImg: data.trueImg ?? "",
+      // These fields are hidden (not submitted) when type is invisible, or always
+      // (trueImg) — don't blow away a previously-set value just because it's hidden.
+      illusionImg: data.illusionImg !== undefined ? data.illusionImg : (existing.illusionImg ?? ""),
+      trueImg: existing.trueImg ?? "",
       fooled,
     });
   }
