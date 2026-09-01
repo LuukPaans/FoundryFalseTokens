@@ -1,0 +1,41 @@
+{
+  "id": "false-tokens",
+  "title": "False Tokens",
+  "description": "Show a different token image to some players than others — for illusions and disguises the GM controls per player. For Foundry VTT v13/v14 and the dnd5e system.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "14"
+  },
+  "authors": [
+    {
+      "name": "Luuk"
+    }
+  ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "dnd5e",
+        "type": "system",
+        "compatibility": {}
+      }
+    ]
+  },
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/module.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "url": "https://github.com/LuukPaans/FoundryFalseTokens",
+  "manifest": "https://raw.githubusercontent.com/LuukPaans/FoundryFalseTokens/main/module.json",
+  "download": "https://github.com/LuukPaans/FoundryFalseTokens/archive/refs/heads/main.zip",
+  "license": ""
+}

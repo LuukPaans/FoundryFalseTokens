@@ -1,0 +1,17 @@
+{
+  "FALSETOKENS": {
+    "HudTooltip": "Illusion",
+    "ConfigTitle": "Illusion",
+    "ConfigTitleFor": "Illusion: {name}",
+    "Active": "Illusion active",
+    "IllusionImage": "Illusion image",
+    "IllusionImagePlaceholder": "Path to the fake image",
+    "IllusionImageHint": "Shown to players who are fooled.",
+    "TrueImage": "True image (optional)",
+    "TrueImageHint": "Leave blank to use the token's current image as the true image.",
+    "SeesThrough": "Sees the true image",
+    "EveryoneSeesTruth": "Everyone sees the truth",
+    "EveryoneFooled": "Everyone is fooled",
+    "NoPlayers": "No non-GM users exist yet."
+  }
+}
