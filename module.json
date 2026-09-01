@@ -2,7 +2,7 @@
   "id": "false-tokens",
   "title": "False Tokens",
   "description": "Show a different token image to some players than others — for illusions and disguises the GM controls per player. For Foundry VTT v13/v14 and the dnd5e system.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "compatibility": {
     "minimum": "13",
     "verified": "14"
