@@ -1,9 +1,4 @@
-import {
-  MODULE_ID,
-  SETTING_GM_PREVIEW,
-  isGMPreviewEnabled,
-  setSceneIllusionsActive,
-} from "./illusion-data.js";
+import { MODULE_ID, SETTING_GM_PREVIEW, isGMPreviewEnabled } from "./illusion-data.js";
 import { refreshAllTokenIllusions } from "./illusion-render.js";
 import { IllusionConfig } from "./illusion-config-app.js";
 
@@ -38,21 +33,6 @@ function createDMViewToggle() {
   return icon;
 }
 
-function createSceneToggleIcon(active) {
-  const icon = document.createElement("div");
-  icon.classList.add("control-icon", "false-tokens-scene-toggle");
-  icon.dataset.tooltip = game.i18n.localize(
-    active ? "FALSETOKENS.EnableAllTooltip" : "FALSETOKENS.DisableAllTooltip",
-  );
-  icon.innerHTML = `<i class="fa-solid ${active ? "fa-toggle-on" : "fa-toggle-off"}"></i>`;
-  icon.addEventListener("click", async (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    await setSceneIllusionsActive(active);
-  });
-  return icon;
-}
-
 export function initIllusionHud() {
   Hooks.on("renderTokenHUD", (hud, html) => {
     if (!game.user.isGM) return;
@@ -65,7 +45,5 @@ export function initIllusionHud() {
 
     rightCol.appendChild(createConfigIcon(hud));
     leftCol.appendChild(createDMViewToggle());
-    leftCol.appendChild(createSceneToggleIcon(true));
-    leftCol.appendChild(createSceneToggleIcon(false));
   });
 }

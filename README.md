@@ -54,11 +54,13 @@ normale GM-weergave.
 
 ### Scene-brede aan/uit
 
-Ernaast staan nog twee knoppen in de linkerkolom: een grote "alles aan" en
-"alles uit" toggle. Die zet in één klik **elk geconfigureerd effect in de
-huidige scene** (illusie én invisible, op alle tokens) actief of inactief —
-handig voor het moment dat een illusie voor de hele groep tegelijk breekt of
-juist triggert, zonder elk token los te hoeven aanpassen.
+In de **Scene Controls** aan de linkerkant van het canvas (dezelfde werkbalk
+als "select token" en "measure") staan, in de Token-tools-groep, twee extra
+knoppen: **alles aan** en **alles uit**. Die zetten in één klik **elk
+geconfigureerd effect in de huidige scene** (illusie én invisible, op alle
+tokens) actief of inactief — handig voor het moment dat een illusie voor de
+hele groep tegelijk breekt of juist triggert, zonder elk token los te hoeven
+aanpassen of eerst een token te hoeven selecteren.
 
 ## Structuur
 
@@ -76,7 +78,10 @@ juist triggert, zonder elk token los te hoeven aanpassen.
   preview-afbeeldingen via een offscreen `<canvas>`. Texture-cache zodat
   `refreshToken` (elke animatieframe) niet steeds opnieuw laadt/bouwt.
 - `scripts/illusion-hud.js` — voegt het maskericoontje (rechts) en de
-  DM-preview-toggle + scene-brede aan/uit-knoppen (links) toe aan de Token HUD.
+  DM-preview-toggle (links) toe aan de Token HUD.
+- `scripts/illusion-scene-controls.js` — voegt de twee scene-brede
+  aan/uit-knoppen toe aan de Token-groep van de Scene Controls-werkbalk
+  (via `getSceneControlButtons`, v13+ object-gebaseerde API).
 - `scripts/illusion-config-app.js` — het configuratievenster (ApplicationV2).
 - `scripts/illusion-combat-tracker.js` — vervangt clientside de portret-`<img>`
   in de Combat Tracker (ook popped-out trackers) voor het Illusion-type,
