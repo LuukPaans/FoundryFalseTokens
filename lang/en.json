@@ -4,6 +4,8 @@
     "DMViewTooltip": "Toggle DM preview (see what selected players see)",
     "EnableAllTooltip": "Enable all illusions in this scene",
     "DisableAllTooltip": "Disable all illusions in this scene",
+    "EnabledAllNotification": "All configured illusions in this scene are now active.",
+    "DisabledAllNotification": "All configured illusions in this scene are now inactive.",
     "ConfigTitle": "Illusion",
     "ConfigTitleFor": "Illusion: {name}",
     "Active": "Effect active",

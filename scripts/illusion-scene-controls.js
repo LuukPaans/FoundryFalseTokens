@@ -1,5 +1,12 @@
 import { setSceneIllusionsActive } from "./illusion-data.js";
 
+async function toggleAll(active) {
+  await setSceneIllusionsActive(active);
+  ui.notifications.info(
+    game.i18n.localize(active ? "FALSETOKENS.EnabledAllNotification" : "FALSETOKENS.DisabledAllNotification"),
+  );
+}
+
 // Adds two buttons to the core "tokens" Scene Controls group (the toolbar with
 // select/measure/ruler tools) so the GM can flip every configured effect in the
 // current scene on or off in one click, without needing a token selected.
@@ -16,7 +23,10 @@ export function initIllusionSceneControls() {
       order,
       button: true,
       visible: game.user.isGM,
-      onChange: () => setSceneIllusionsActive(true),
+      // Registered under both names: different Foundry versions/tool types
+      // dispatch button clicks via one or the other, and having both costs nothing.
+      onClick: () => toggleAll(true),
+      onChange: () => toggleAll(true),
     };
     tokenControls.tools["false-tokens-disable-all"] = {
       name: "false-tokens-disable-all",
@@ -25,7 +35,8 @@ export function initIllusionSceneControls() {
       order: order + 1,
       button: true,
       visible: game.user.isGM,
-      onChange: () => setSceneIllusionsActive(false),
+      onClick: () => toggleAll(false),
+      onChange: () => toggleAll(false),
     };
   });
 }
