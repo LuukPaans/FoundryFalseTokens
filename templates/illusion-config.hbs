@@ -5,37 +5,49 @@
   </div>
 
   <div class="form-group">
-    <label>{{localize "FALSETOKENS.IllusionImage"}}</label>
-    <div class="form-fields">
-      <input type="text" name="illusionImg" value="{{illusionImg}}"
-        placeholder="{{localize 'FALSETOKENS.IllusionImagePlaceholder'}}" />
-      <button type="button" data-action="pickIllusion" data-target="illusionImg">
-        <i class="fa-solid fa-file-image"></i>
-      </button>
-    </div>
-    <p class="hint">{{localize "FALSETOKENS.IllusionImageHint"}}</p>
+    <label>{{localize "FALSETOKENS.Type"}}</label>
+    <select name="type">
+      <option value="illusion" {{#unless isInvisible}}selected{{/unless}}>{{localize "FALSETOKENS.TypeIllusion"}}</option>
+      <option value="invisible" {{#if isInvisible}}selected{{/if}}>{{localize "FALSETOKENS.TypeInvisible"}}</option>
+    </select>
   </div>
 
-  <div class="form-group">
-    <label>{{localize "FALSETOKENS.TrueImage"}}</label>
-    <div class="form-fields">
-      <input type="text" name="trueImg" value="{{trueImg}}" placeholder="{{trueImgPlaceholder}}" />
-      <button type="button" data-action="pickTrue" data-target="trueImg">
-        <i class="fa-solid fa-file-image"></i>
-      </button>
+  {{#unless isInvisible}}
+    <div class="form-group">
+      <label>{{localize "FALSETOKENS.IllusionImage"}}</label>
+      <div class="form-fields">
+        <input type="text" name="illusionImg" value="{{illusionImg}}"
+          placeholder="{{localize 'FALSETOKENS.IllusionImagePlaceholder'}}" />
+        <button type="button" data-action="pickIllusion" data-target="illusionImg">
+          <i class="fa-solid fa-file-image"></i>
+        </button>
+      </div>
+      <p class="hint">{{localize "FALSETOKENS.IllusionImageHint"}}</p>
     </div>
-    <p class="hint">{{localize "FALSETOKENS.TrueImageHint"}}</p>
-  </div>
+
+    <div class="form-group">
+      <label>{{localize "FALSETOKENS.TrueImage"}}</label>
+      <div class="form-fields">
+        <input type="text" name="trueImg" value="{{trueImg}}" placeholder="{{trueImgPlaceholder}}" />
+        <button type="button" data-action="pickTrue" data-target="trueImg">
+          <i class="fa-solid fa-file-image"></i>
+        </button>
+      </div>
+      <p class="hint">{{localize "FALSETOKENS.TrueImageHint"}}</p>
+    </div>
+  {{/unless}}
 
   <fieldset class="false-tokens-user-list">
-    <legend>{{localize "FALSETOKENS.SeesThrough"}}</legend>
+    <legend>
+      {{#if isInvisible}}{{localize "FALSETOKENS.LegendInvisible"}}{{else}}{{localize "FALSETOKENS.LegendIllusion"}}{{/if}}
+    </legend>
     <div class="false-tokens-bulk-actions">
-      <button type="button" data-action="allTrue">{{localize "FALSETOKENS.EveryoneSeesTruth"}}</button>
-      <button type="button" data-action="allFalse">{{localize "FALSETOKENS.EveryoneFooled"}}</button>
+      <button type="button" data-action="allTrue">{{localize "FALSETOKENS.MarkEveryone"}}</button>
+      <button type="button" data-action="allFalse">{{localize "FALSETOKENS.ClearEveryone"}}</button>
     </div>
     {{#each users}}
       <label class="checkbox">
-        <input type="checkbox" name="seesThrough.{{this.id}}" {{checked this.seesThrough}} />
+        <input type="checkbox" name="fooled.{{this.id}}" {{checked this.fooled}} />
         {{this.name}}
       </label>
     {{/each}}

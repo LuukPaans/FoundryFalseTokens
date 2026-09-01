@@ -1,17 +1,22 @@
 {
   "FALSETOKENS": {
     "HudTooltip": "Illusion",
+    "DMViewTooltip": "Toggle DM preview (see what selected players see)",
     "ConfigTitle": "Illusion",
     "ConfigTitleFor": "Illusion: {name}",
-    "Active": "Illusion active",
+    "Active": "Effect active",
+    "Type": "Type",
+    "TypeIllusion": "Illusion (different image)",
+    "TypeInvisible": "Invisible",
     "IllusionImage": "Illusion image",
     "IllusionImagePlaceholder": "Path to the fake image",
-    "IllusionImageHint": "Shown to players who are fooled.",
+    "IllusionImageHint": "Shown to affected (checked) players.",
     "TrueImage": "True image (optional)",
     "TrueImageHint": "Leave blank to use the token's current image as the true image.",
-    "SeesThrough": "Sees the true image",
-    "EveryoneSeesTruth": "Everyone sees the truth",
-    "EveryoneFooled": "Everyone is fooled",
+    "LegendIllusion": "Sees the illusion",
+    "LegendInvisible": "Cannot see this token",
+    "MarkEveryone": "Mark everyone",
+    "ClearEveryone": "Clear everyone",
     "NoPlayers": "No non-GM users exist yet."
   }
 }

@@ -1,74 +1,94 @@
 # False Tokens
 
-Foundry v13/v14 module (systeem: D&D 5e) waarmee een GM een token een tweede,
-"vervalste" afbeelding kan geven die alleen bepaalde spelers te zien krijgen —
-bedoeld voor illusies/vermommingen: spelers die "doorheen kijken" zien de echte
-afbeelding, de rest ziet de illusie.
+Foundry v13/v14 module (systeem: D&D 5e) waarmee een GM een token een effect
+kan geven dat alleen bepaalde spelers merken — **illusie** (andere afbeelding)
+of **onzichtbaar** — met per-speler instelbaar wie het effect ondervindt.
 
 ## Gebruik
 
 1. Selecteer een token. In de Token HUD (het menu dat verschijnt als je op een
-   token klikt) verschijnt een maskericoontje, alleen zichtbaar voor de GM.
-2. Klik erop om het illusie-venster te openen:
-   - **Illusion active** — hoofdschakelaar voor deze token.
-   - **Illusion image** — de nepafbeelding die "gefooled" spelers zien.
-   - **True image** — optioneel; leeg = de huidige tokenafbeelding.
-   - **Sees the true image** — per-speler checkbox, plus twee knoppen om in één
-     klik iedereen te laten fooien of iedereen de waarheid te laten zien.
+   token klikt) verschijnt een maskericoontje rechts, alleen zichtbaar voor de GM.
+2. Klik erop om het configuratievenster te openen:
+   - **Effect active** — hoofdschakelaar voor dit token.
+   - **Type** — **Illusion** (andere afbeelding) of **Invisible** (onzichtbaar).
+   - Bij type Illusion:
+     - **Illusion image** — de nepafbeelding die aangevinkte spelers zien.
+     - **True image** — optioneel; leeg = de huidige tokenafbeelding.
+   - Onderaan: per-speler checkboxen. **Aangevinkt = die speler ondervindt het
+     effect** (ziet de illusie, of ziet het token bij Invisible helemaal niet).
+     Niet aangevinkt = die speler ziet gewoon de waarheid. Twee knoppen
+     ("Mark everyone" / "Clear everyone") zetten in één klik iedereen aan/uit.
 3. Wijzigingen worden direct toegepast (geen aparte opslaan-knop nodig).
 
-De GM ziet standaard altijd de echte afbeelding, met één uitzondering: de
-**preview-modus**. Selecteer je op canvas één of meer spelertokens, dan
-toont elke geïllusioneerde token voor jou wat die speler(s) zien:
+### Invisible
 
-- Alle geselecteerde spelers zien hetzelfde (allemaal doorheen, of allemaal
-  gefooid) → je ziet precies die afbeelding.
-- Geselecteerde spelers zijn het oneens (bv. 1 ziet doorheen, 2 zijn gefooid)
-  → je ziet de echte afbeelding met een paarse, 20%-transparante "geest" van
-  de illusie erover — een visueel signaal dat de groep niet hetzelfde ziet.
-- Geen spelertoken geselecteerd → gewoon de echte afbeelding, zoals altijd.
+Voor aangevinkte spelers is het token gewoon onzichtbaar (niet aanwezig op hun
+canvas) — verder geen aparte afbeelding nodig. De GM ziet, net als in
+standaard Foundry/D&D, altijd een doorschijnende (50% alpha) versie van het
+token, ongeacht de DM-previewmodus hieronder.
 
-Deselecteer de spelertoken(s) om terug te gaan naar de normale GM-weergave.
+### DM-preview (Illusion-type)
+
+Naast het maskericoontje staat, in de **linkerkolom** van de Token HUD, een
+oog-icoontje: de **DM-preview-toggle**. Staat die **uit** (standaard), dan
+ziet de GM altijd gewoon de echte afbeelding — precies zoals voorheen. Staat
+hij **aan**, dan verandert het selecteren van spelertokens op canvas wat de
+GM voor elk geïllusioneerd token ziet:
+
+- Alle geselecteerde spelers zien hetzelfde:
+  - allemaal de waarheid → GM ziet de echte afbeelding, geen tint.
+  - allemaal de illusie → GM ziet de illusie-afbeelding met een lichte paarse
+    tint erover, zodat meteen duidelijk is dat het om een illusie gaat.
+- Geselecteerde spelers zijn het oneens (bv. 1 ziet de waarheid, 2 de illusie)
+  → GM ziet de echte afbeelding met een paars getinte "geest" van de illusie
+  op 40% dekking erover.
+- Geen spelertoken geselecteerd → gewoon de echte afbeelding.
+
+Deselecteer de spelertoken(s), of zet de toggle uit, om terug te gaan naar de
+normale GM-weergave.
 
 ## Structuur
 
 - `module.json` — manifest (v13+, systeem `dnd5e`).
 - `scripts/illusion-data.js` — dataflag op de TokenDocument
-  (`flags.false-tokens.illusion`) en de logica die bepaalt welke afbeelding een
-  gegeven gebruiker moet zien.
-- `scripts/illusion-render.js` — wisselt clientside de PIXI-texture van het
-  token (`token.mesh.texture`) op basis van die logica, met een texture-cache
-  zodat `refreshToken` (elke animatieframe) niet steeds opnieuw laadt. Voor de
-  GM regelt dit bestand ook de preview-modus (zie hierboven), inclusief het
-  on-the-fly samenstellen van de paarse "geest"-afbeelding via een offscreen
-  `<canvas>` wanneer geselecteerde spelers het oneens zijn.
-- `scripts/illusion-hud.js` — voegt het maskerpictogram toe aan de Token HUD.
+  (`flags.false-tokens.illusion`: `active`, `type`, `illusionImg`, `trueImg`,
+  `fooled`) en de logica die per gebruiker bepaalt wat die moet zien, plus de
+  client-setting voor de DM-preview-toggle.
+- `scripts/illusion-render.js` — past clientside toe wat `illusion-data.js`
+  bepaalt: PIXI-texture wisselen (`token.mesh.texture`) voor illusies,
+  `token.visible` uitzetten voor onzichtbaarheid, `token.mesh.alpha` verlagen
+  voor de GM's doorschijnende weergave, en het on-the-fly samenstellen van de
+  paars-getinte preview-afbeeldingen via een offscreen `<canvas>`. Texture-cache
+  zodat `refreshToken` (elke animatieframe) niet steeds opnieuw laadt/bouwt.
+- `scripts/illusion-hud.js` — voegt het maskericoontje (rechts) en de
+  DM-preview-toggle (links) toe aan de Token HUD.
 - `scripts/illusion-config-app.js` — het configuratievenster (ApplicationV2).
-- `scripts/illusion-combat-tracker.js` — vervangt clientside de portret-`<img>` in
-  de Combat Tracker (ook popped-out trackers) volgens dezelfde logica, en forceert
-  een her-render van de tracker zodra de GM een illusie aanpast.
+- `scripts/illusion-combat-tracker.js` — vervangt clientside de portret-`<img>`
+  in de Combat Tracker (ook popped-out trackers) voor het Illusion-type,
+  en forceert een her-render van de tracker zodra de GM een effect aanpast.
 - `templates/illusion-config.hbs`, `styles/module.css`, `lang/en.json`.
 
 ## Compatibiliteit met Token Flip-achtige modules
 
-Deze module wijzigt alleen `token.mesh.texture` (welke afbeelding er getoond
-wordt); modules die tokens spiegelen doen dat via `token.mesh.scale`
-(horizontaal omdraaien). Dat zijn losse PIXI-properties, dus een gespiegelde
-token toont gewoon de illusie- of ware afbeelding gespiegeld. Er wordt geen
-scene-control-knop, geen gedeelde flag-namespace en geen bestaand
+Deze module wijzigt alleen `token.mesh.texture`, `token.visible` en
+`token.mesh.alpha`; modules die tokens spiegelen doen dat via
+`token.mesh.scale` (horizontaal omdraaien) — een losse property, dus een
+gespiegelde token toont gewoon de illusie- of ware afbeelding gespiegeld. Er
+wordt geen scene-control-knop, geen gedeelde flag-namespace en geen bestaand
 HUD-icoon aangeraakt — alles zit onder de eigen `flags.false-tokens`
-namespace en een eigen icoontje.
+namespace en eigen icoontjes.
 
 ## Bekende beperkingen
 
-- **De canvas-tokenafbeelding en het Combat Tracker-portret wisselen mee.**
-  Het chatkaartje bij een actie en het actorblad zelf tonen nog steeds de
-  echte afbeelding/naam — laat het weten als dat ook afgeschermd moet worden.
-- **Niet cheat-proof.** De echte en illusie-afbeelding staan allebei in de
-  gesynchroniseerde tokendata; een speler die de browser devtools/console
-  gebruikt kan het pad van de echte afbeelding vinden. Dit was een bewuste
-  keuze voor eenvoud, in plaats van een GM-geautoriseerde (socket)aanpak die
-  dat had voorkomen, maar wel altijd een online GM vereist.
-- De GM-previewmodus (hierboven) is nieuw en nog niet live getest — met name
-  de kleurmenging van de "geest"-afbeelding kan er anders uitzien dan bedoeld
-  afhankelijk van de brontexturen. Laat weten hoe het eruitziet.
+- **Alleen de canvas-tokenafbeelding en (voor Illusion) het Combat
+  Tracker-portret worden afgeschermd.** Het chatkaartje bij een actie en het
+  actorblad zelf tonen nog steeds de echte afbeelding/naam; voor Invisible
+  toont de Combat Tracker het token ook nog gewoon (niet verborgen) — laat
+  het weten als dat ook moet.
+- **Niet cheat-proof.** Alle data (welke afbeelding, wie ziet wat) staat
+  gesynchroniseerd naar elke client; een speler die de browser
+  devtools/console gebruikt kan dit uitlezen. Bewuste keuze voor eenvoud,
+  in plaats van een GM-geautoriseerde (socket)aanpak die dat had voorkomen
+  maar wel altijd een online GM vereist.
+- Type Invisible en de bijgewerkte DM-preview-kleuren zijn nieuw en nog niet
+  live getest.

@@ -51,15 +51,17 @@ export class IllusionConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _prepareContext() {
     const illusion = getIllusion(this.tokenDocument) ?? {};
+    const isInvisible = illusion.type === "invisible";
     const users = game.users
       .filter((u) => !u.isGM)
       .map((u) => ({
         id: u.id,
         name: u.name,
-        seesThrough: illusion.seesThrough?.includes(u.id) ?? false,
+        fooled: illusion.fooled?.includes(u.id) ?? false,
       }));
     return {
       active: illusion.active ?? false,
+      isInvisible,
       illusionImg: illusion.illusionImg ?? "",
       trueImg: illusion.trueImg ?? "",
       trueImgPlaceholder: this.tokenDocument.texture.src,
@@ -84,7 +86,7 @@ export class IllusionConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onBulkToggle(event, target) {
     const checked = target.dataset.action === "allTrue";
-    this.element.querySelectorAll('input[name^="seesThrough."]').forEach((el) => {
+    this.element.querySelectorAll('input[name^="fooled."]').forEach((el) => {
       el.checked = checked;
     });
     this.element.requestSubmit();
@@ -92,14 +94,15 @@ export class IllusionConfig extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onSubmit(event, form, formData) {
     const data = foundry.utils.expandObject(formData.object);
-    const seesThrough = Object.entries(data.seesThrough ?? {})
+    const fooled = Object.entries(data.fooled ?? {})
       .filter(([, checked]) => checked)
       .map(([id]) => id);
     await setIllusion(this.tokenDocument, {
       active: !!data.active,
+      type: data.type === "invisible" ? "invisible" : "illusion",
       illusionImg: data.illusionImg ?? "",
       trueImg: data.trueImg ?? "",
-      seesThrough,
+      fooled,
     });
   }
 

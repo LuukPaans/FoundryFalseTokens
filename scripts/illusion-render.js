@@ -1,7 +1,15 @@
-import { MODULE_ID, resolveImage, resolveGMPreview } from "./illusion-data.js";
+import {
+  MODULE_ID,
+  resolveImage,
+  resolveGMPreview,
+  isHiddenFrom,
+  isGMInvisibleView,
+} from "./illusion-data.js";
 
-// Matches the Token HUD icon's purple.
-const MIX_TINT = "rgba(184, 146, 255, 0.35)";
+// Matches the Token HUD icon's purple, toned down so it reads as a tint, not a wash.
+const TINT_COLOR = "rgba(184, 146, 255, 0.22)";
+const GHOST_OPACITY = 0.4;
+const GM_INVISIBLE_ALPHA = 0.5;
 
 // Cache loaded PIXI textures (and composited canvases) by key so refreshToken
 // (which fires every animation frame while dragging/updating) doesn't redo work.
@@ -28,43 +36,63 @@ function loadImageElement(src) {
   });
 }
 
-async function buildCompositeTexture(trueSrc, illusionSrc) {
+// Tints only the image's own opaque silhouette purple (source-atop only paints
+// where alpha already exists), so it stays legible instead of becoming a block of color.
+function tintImage(img) {
+  const canvasEl = document.createElement("canvas");
+  canvasEl.width = img.naturalWidth || img.width;
+  canvasEl.height = img.naturalHeight || img.height;
+  const ctx = canvasEl.getContext("2d");
+  ctx.drawImage(img, 0, 0, canvasEl.width, canvasEl.height);
+  ctx.globalCompositeOperation = "source-atop";
+  ctx.fillStyle = TINT_COLOR;
+  ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+  ctx.globalCompositeOperation = "source-over";
+  return canvasEl;
+}
+
+async function buildTintedIllusionTexture(illusionSrc) {
+  const img = await loadImageElement(illusionSrc);
+  return PIXI.Texture.from(tintImage(img));
+}
+
+async function buildMixedTexture(trueSrc, illusionSrc) {
   const [trueImg, illusionImg] = await Promise.all([
     loadImageElement(trueSrc),
     loadImageElement(illusionSrc),
   ]);
+  const tintedIllusion = tintImage(illusionImg);
+
   const canvasEl = document.createElement("canvas");
   canvasEl.width = trueImg.naturalWidth || trueImg.width;
   canvasEl.height = trueImg.naturalHeight || trueImg.height;
   const ctx = canvasEl.getContext("2d");
-
   ctx.drawImage(trueImg, 0, 0, canvasEl.width, canvasEl.height);
-
-  ctx.globalAlpha = 0.2;
-  ctx.drawImage(illusionImg, 0, 0, canvasEl.width, canvasEl.height);
+  ctx.globalAlpha = GHOST_OPACITY;
+  ctx.drawImage(tintedIllusion, 0, 0, canvasEl.width, canvasEl.height);
   ctx.globalAlpha = 1;
-
-  // Tint just the silhouette drawn above (source-atop only paints over existing
-  // alpha) so the ghost image reads as purple rather than its natural colors.
-  ctx.globalCompositeOperation = "source-atop";
-  ctx.fillStyle = MIX_TINT;
-  ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
-  ctx.globalCompositeOperation = "source-over";
-
   return PIXI.Texture.from(canvasEl);
-}
-
-function getCompositeTexture(trueSrc, illusionSrc) {
-  const key = `mixed:${trueSrc}|${illusionSrc}`;
-  if (!textureCache.has(key)) {
-    textureCache.set(key, buildCompositeTexture(trueSrc, illusionSrc));
-  }
-  return textureCache.get(key);
 }
 
 function previewKey(preview) {
   if (!preview) return null;
-  return preview.mode === "single" ? preview.src : `mixed:${preview.trueSrc}|${preview.illusionSrc}`;
+  if (preview.mode === "true") return "true";
+  if (preview.mode === "illusion") return `tinted:${preview.src}`;
+  return `mixed:${preview.trueSrc}|${preview.illusionSrc}`;
+}
+
+function getPreviewTexture(preview, doc) {
+  const key = previewKey(preview);
+  if (preview.mode === "true") return getCachedTexture(doc.texture.src);
+  if (!textureCache.has(key)) {
+    textureCache.set(
+      key,
+      preview.mode === "illusion"
+        ? buildTintedIllusionTexture(preview.src)
+        : buildMixedTexture(preview.trueSrc, preview.illusionSrc),
+    );
+  }
+  return textureCache.get(key);
 }
 
 async function applyGMPreview(token, doc) {
@@ -82,10 +110,7 @@ async function applyGMPreview(token, doc) {
     return;
   }
 
-  const texture = preview.mode === "single"
-    ? await getCachedTexture(preview.src)
-    : await getCompositeTexture(preview.trueSrc, preview.illusionSrc);
-
+  const texture = await getPreviewTexture(preview, doc);
   if (!token.mesh || token.destroyed) return;
   // Selection or flags may have changed again while the texture was loading.
   if (previewKey(resolveGMPreview(doc)) !== key) return;
@@ -93,14 +118,59 @@ async function applyGMPreview(token, doc) {
   token._falseTokensSrc = key;
 }
 
+// Fully hides a token from a specific client without touching the synced document,
+// only ever restoring visibility if we were the one who last forced it off (so we
+// never fight core's own fog-of-war/hidden-token visibility logic).
+function setHidden(token, hidden) {
+  if (hidden) {
+    token.visible = false;
+    token._falseTokensHidden = true;
+  } else if (token._falseTokensHidden) {
+    token.visible = true;
+    token._falseTokensHidden = false;
+  }
+}
+
+// Base D&D/Foundry convention: the GM sees invisible creatures translucent.
+function setGMInvisibleAlpha(token, active) {
+  if (!token.mesh) return;
+  if (active) {
+    token.mesh.alpha = GM_INVISIBLE_ALPHA;
+    token._falseTokensAlpha = true;
+  } else if (token._falseTokensAlpha) {
+    token.mesh.alpha = 1;
+    token._falseTokensAlpha = false;
+  }
+}
+
+async function revertTextureOverride(token, doc) {
+  if (!token._falseTokensSrc) return;
+  const texture = await getCachedTexture(doc.texture.src);
+  if (!token.mesh || token.destroyed) return;
+  token.mesh.texture = texture;
+  token._falseTokensSrc = null;
+}
+
 async function applyIllusion(token) {
   const doc = token?.document;
   if (!doc) return;
 
   if (game.user.isGM) {
+    if (isGMInvisibleView(doc)) {
+      setGMInvisibleAlpha(token, true);
+      await revertTextureOverride(token, doc); // invisible mode never swaps texture
+      return;
+    }
+    setGMInvisibleAlpha(token, false);
     await applyGMPreview(token, doc);
     return;
   }
+
+  if (isHiddenFrom(doc, game.user)) {
+    setHidden(token, true);
+    return;
+  }
+  setHidden(token, false);
 
   const targetSrc = resolveImage(doc, game.user) ?? doc.texture.src;
   if (!targetSrc || token._falseTokensSrc === targetSrc) return;
@@ -112,6 +182,10 @@ async function applyIllusion(token) {
 
   token.mesh.texture = texture;
   token._falseTokensSrc = targetSrc;
+}
+
+export function refreshAllTokenIllusions() {
+  for (const token of canvas.tokens?.placeables ?? []) applyIllusion(token);
 }
 
 export function initIllusionRendering() {
@@ -131,6 +205,6 @@ export function initIllusionRendering() {
   // single token's own data, so re-evaluate every token when selection changes.
   Hooks.on("controlToken", () => {
     if (!game.user.isGM || !canvas.ready) return;
-    for (const token of canvas.tokens?.placeables ?? []) applyIllusion(token);
+    refreshAllTokenIllusions();
   });
 }
