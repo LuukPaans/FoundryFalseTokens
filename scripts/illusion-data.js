@@ -33,3 +33,45 @@ export function resolveImage(tokenDocument, user = game.user) {
 export async function setIllusion(tokenDocument, data) {
   return tokenDocument.setFlag(MODULE_ID, FLAG_KEY, data);
 }
+
+/**
+ * Non-GM users who own at least one currently-controlled token, used to let the
+ * GM preview what those players see. A player is included once even if they
+ * own several selected tokens.
+ */
+export function getPreviewUsers() {
+  const controlled = canvas.tokens?.controlled ?? [];
+  const users = new Set();
+  for (const token of controlled) {
+    const actor = token.actor;
+    if (!actor) continue;
+    for (const user of game.users) {
+      if (!user.isGM && actor.testUserPermission(user, "OWNER")) users.add(user);
+    }
+  }
+  return Array.from(users);
+}
+
+/**
+ * What the GM should see for this token, based on which players' tokens are
+ * currently selected on the canvas. Null means "no override" (GM sees the
+ * true image as usual).
+ * @returns {null
+ *   | {mode: "single", src: string}
+ *   | {mode: "mixed", trueSrc: string, illusionSrc: string}}
+ */
+export function resolveGMPreview(tokenDocument) {
+  const illusion = getIllusion(tokenDocument);
+  if (!illusion?.active || !illusion.illusionImg) return null;
+
+  const previewUsers = getPreviewUsers();
+  if (!previewUsers.length) return null;
+
+  const trueSrc = illusion.trueImg || tokenDocument.texture.src;
+  const perUser = previewUsers.map((u) =>
+    illusion.seesThrough?.includes(u.id) ? trueSrc : illusion.illusionImg,
+  );
+
+  if (new Set(perUser).size === 1) return { mode: "single", src: perUser[0] };
+  return { mode: "mixed", trueSrc, illusionSrc: illusion.illusionImg };
+}

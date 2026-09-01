@@ -17,7 +17,18 @@ afbeelding, de rest ziet de illusie.
      klik iedereen te laten fooien of iedereen de waarheid te laten zien.
 3. Wijzigingen worden direct toegepast (geen aparte opslaan-knop nodig).
 
-De GM ziet altijd de echte afbeelding.
+De GM ziet standaard altijd de echte afbeelding, met één uitzondering: de
+**preview-modus**. Selecteer je op canvas één of meer spelertokens, dan
+toont elke geïllusioneerde token voor jou wat die speler(s) zien:
+
+- Alle geselecteerde spelers zien hetzelfde (allemaal doorheen, of allemaal
+  gefooid) → je ziet precies die afbeelding.
+- Geselecteerde spelers zijn het oneens (bv. 1 ziet doorheen, 2 zijn gefooid)
+  → je ziet de echte afbeelding met een paarse, 20%-transparante "geest" van
+  de illusie erover — een visueel signaal dat de groep niet hetzelfde ziet.
+- Geen spelertoken geselecteerd → gewoon de echte afbeelding, zoals altijd.
+
+Deselecteer de spelertoken(s) om terug te gaan naar de normale GM-weergave.
 
 ## Structuur
 
@@ -27,7 +38,10 @@ De GM ziet altijd de echte afbeelding.
   gegeven gebruiker moet zien.
 - `scripts/illusion-render.js` — wisselt clientside de PIXI-texture van het
   token (`token.mesh.texture`) op basis van die logica, met een texture-cache
-  zodat `refreshToken` (elke animatieframe) niet steeds opnieuw laadt.
+  zodat `refreshToken` (elke animatieframe) niet steeds opnieuw laadt. Voor de
+  GM regelt dit bestand ook de preview-modus (zie hierboven), inclusief het
+  on-the-fly samenstellen van de paarse "geest"-afbeelding via een offscreen
+  `<canvas>` wanneer geselecteerde spelers het oneens zijn.
 - `scripts/illusion-hud.js` — voegt het maskerpictogram toe aan de Token HUD.
 - `scripts/illusion-config-app.js` — het configuratievenster (ApplicationV2).
 - `scripts/illusion-combat-tracker.js` — vervangt clientside de portret-`<img>` in
@@ -55,8 +69,6 @@ namespace en een eigen icoontje.
   gebruikt kan het pad van de echte afbeelding vinden. Dit was een bewuste
   keuze voor eenvoud, in plaats van een GM-geautoriseerde (socket)aanpak die
   dat had voorkomen, maar wel altijd een online GM vereist.
-- Nog niet getest tegen een draaiende Foundry-installatie (geen instance
-  beschikbaar hier) — met name de exacte CSS-structuur van de Token HUD kan
-  per v13/v14-(sub)versie verschillen. De HUD-injectie zoekt daarom eerst naar
-  `.col.right`, dan `.col.left`, en valt anders terug op de HUD-root, zodat het
-  icoon sowieso ergens verschijnt.
+- De GM-previewmodus (hierboven) is nieuw en nog niet live getest — met name
+  de kleurmenging van de "geest"-afbeelding kan er anders uitzien dan bedoeld
+  afhankelijk van de brontexturen. Laat weten hoe het eruitziet.
