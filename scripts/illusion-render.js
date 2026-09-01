@@ -13,16 +13,24 @@ const GM_INVISIBLE_ALPHA = 0.5;
 
 // Cache loaded PIXI textures (and composited canvases) by key so refreshToken
 // (which fires every animation frame while dragging/updating) doesn't redo work.
+// Failures are cached too (as null) - refreshToken fires many times per second,
+// so a bad path must fail once and stay failed, never retry-and-reject on a loop.
 const textureCache = new Map();
 
 function getRoute(src) {
   return foundry.utils?.getRoute ? foundry.utils.getRoute(src) : src;
 }
 
-async function getCachedTexture(src) {
+function getCachedTexture(src) {
   if (!textureCache.has(src)) {
     const loader = foundry.canvas?.loadTexture ?? loadTexture;
-    textureCache.set(src, loader(src));
+    textureCache.set(
+      src,
+      Promise.resolve(loader(src)).catch((err) => {
+        console.warn(`false-tokens | failed to load texture "${src}"`, err);
+        return null;
+      }),
+    );
   }
   return textureCache.get(src);
 }
@@ -31,7 +39,7 @@ function loadImageElement(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`false-tokens | failed to load ${src}`));
+    img.onerror = () => reject(new Error(`failed to load image "${src}"`));
     img.src = getRoute(src);
   });
 }
@@ -85,11 +93,16 @@ function getPreviewTexture(preview, doc) {
   const key = previewKey(preview);
   if (preview.mode === "true") return getCachedTexture(doc.texture.src);
   if (!textureCache.has(key)) {
-    textureCache.set(
-      key,
+    const builder =
       preview.mode === "illusion"
         ? buildTintedIllusionTexture(preview.src)
-        : buildMixedTexture(preview.trueSrc, preview.illusionSrc),
+        : buildMixedTexture(preview.trueSrc, preview.illusionSrc);
+    textureCache.set(
+      key,
+      builder.catch((err) => {
+        console.warn(`false-tokens | failed to build preview texture "${key}"`, err);
+        return null;
+      }),
     );
   }
   return textureCache.get(key);
@@ -103,7 +116,7 @@ async function applyGMPreview(token, doc) {
   if (!preview) {
     if (!token._falseTokensSrc) return; // never overridden, nothing to revert
     const texture = await getCachedTexture(doc.texture.src);
-    if (!token.mesh || token.destroyed) return;
+    if (!texture || !token.mesh || token.destroyed) return;
     if (previewKey(resolveGMPreview(doc)) !== key) return;
     token.mesh.texture = texture;
     token._falseTokensSrc = null;
@@ -111,7 +124,7 @@ async function applyGMPreview(token, doc) {
   }
 
   const texture = await getPreviewTexture(preview, doc);
-  if (!token.mesh || token.destroyed) return;
+  if (!texture || !token.mesh || token.destroyed) return;
   // Selection or flags may have changed again while the texture was loading.
   if (previewKey(resolveGMPreview(doc)) !== key) return;
   token.mesh.texture = texture;
@@ -146,12 +159,12 @@ function setGMInvisibleAlpha(token, active) {
 async function revertTextureOverride(token, doc) {
   if (!token._falseTokensSrc) return;
   const texture = await getCachedTexture(doc.texture.src);
-  if (!token.mesh || token.destroyed) return;
+  if (!texture || !token.mesh || token.destroyed) return;
   token.mesh.texture = texture;
   token._falseTokensSrc = null;
 }
 
-async function applyIllusion(token) {
+async function applyIllusionUnsafe(token) {
   const doc = token?.document;
   if (!doc) return;
 
@@ -176,12 +189,23 @@ async function applyIllusion(token) {
   if (!targetSrc || token._falseTokensSrc === targetSrc) return;
 
   const texture = await getCachedTexture(targetSrc);
-  if (!token.mesh || token.destroyed) return;
+  if (!texture || !token.mesh || token.destroyed) return;
   const currentTarget = resolveImage(doc, game.user) ?? doc.texture.src;
   if (currentTarget !== targetSrc) return;
 
   token.mesh.texture = texture;
   token._falseTokensSrc = targetSrc;
+}
+
+// refreshToken/drawToken fire continuously (every animation frame while a token is
+// moving/updating); never let an unexpected error surface as an unhandled rejection
+// on every one of those ticks.
+async function applyIllusion(token) {
+  try {
+    await applyIllusionUnsafe(token);
+  } catch (err) {
+    console.error("false-tokens | failed to apply token illusion", err);
+  }
 }
 
 export function refreshAllTokenIllusions() {
