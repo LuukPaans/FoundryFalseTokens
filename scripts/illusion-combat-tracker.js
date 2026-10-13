@@ -1,10 +1,16 @@
-import { MODULE_ID, resolveImage } from "./illusion-data.js";
+import { MODULE_ID, resolveImage, isHiddenFrom } from "./illusion-data.js";
 
 function applyToRow(row, combat) {
   const combatantId = row.dataset.combatantId;
   const combatant = combat?.combatants.get(combatantId);
   const tokenDocument = combatant?.token;
   if (!tokenDocument) return;
+
+  // Invisible mode: the player shouldn't learn about the creature from the tracker either.
+  if (!game.user.isGM && isHiddenFrom(tokenDocument, game.user)) {
+    row.style.display = "none";
+    return;
+  }
 
   const src = resolveImage(tokenDocument, game.user);
   if (!src) return;

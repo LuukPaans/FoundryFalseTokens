@@ -131,22 +131,45 @@ async function applyGMPreview(token, doc) {
   token._falseTokensSrc = key;
 }
 
-// Fully hides a token from a specific client without touching the synced document,
-// only ever restoring visibility if we were the one who last forced it off (so we
-// never fight core's own fog-of-war/hidden-token visibility logic). The token's
-// artwork (token.mesh) lives in a separate primary-canvas render group from the
-// token's own container (name/bars/border), so both need to be toggled - setting
-// only token.visible left the actual image fully visible to "invisible" players.
-function setHidden(token, hidden) {
-  if (hidden) {
-    token.visible = false;
-    if (token.mesh) token.mesh.visible = false;
-    token._falseTokensHidden = true;
-  } else if (token._falseTokensHidden) {
-    token.visible = true;
-    if (token.mesh) token.mesh.visible = true;
-    token._falseTokensHidden = false;
+// Invisible mode is enforced by wrapping core's Token#isVisible (see
+// patchTokenVisibility), so every core path that decides visibility (perception
+// updates, fog of war, hover, targeting, the artwork mesh in the primary canvas
+// group) agrees with us. Flipping token.visible from a refresh hook instead lost
+// the race against core recomputing it, which left the token visible to players.
+function patchTokenVisibility() {
+  let proto = CONFIG.Token.objectClass.prototype;
+  let descriptor;
+  while (proto && !(descriptor = Object.getOwnPropertyDescriptor(proto, "isVisible"))) {
+    proto = Object.getPrototypeOf(proto);
   }
+  if (!descriptor?.get) {
+    console.warn("false-tokens | Token#isVisible not found, invisible mode will not hide tokens");
+    return;
+  }
+  const original = descriptor.get;
+  Object.defineProperty(proto, "isVisible", {
+    ...descriptor,
+    get() {
+      const doc = this.document;
+      if (doc && !game.user.isGM && isHiddenFrom(doc, game.user)) return false;
+      return original.call(this);
+    },
+  });
+}
+
+// Belt and braces for the frame in which the flag changes: hide right away
+// rather than waiting for core's next visibility refresh. Only ever forces
+// things off; turning a token back on is left to core (refreshVisibility), so
+// we never reveal a token that fog of war or the hidden toggle should hide.
+function enforceHidden(token) {
+  token.visible = false;
+  if (token.mesh) token.mesh.visible = false;
+}
+
+// Asks core to recompute everything that depends on visibility, which now
+// includes our isVisible patch.
+function requestVisibilityRefresh(token) {
+  token.renderFlags?.set({ refreshState: true, refreshVisibility: true, refreshMesh: true });
 }
 
 // Base D&D/Foundry convention: the GM sees invisible creatures translucent.
@@ -156,8 +179,10 @@ function setGMInvisibleAlpha(token, active) {
     token.mesh.alpha = GM_INVISIBLE_ALPHA;
     token._falseTokensAlpha = true;
   } else if (token._falseTokensAlpha) {
-    token.mesh.alpha = 1;
+    // Let core put back whatever alpha the token should have (e.g. its own
+    // alpha setting, or the GM's translucent look for hidden tokens).
     token._falseTokensAlpha = false;
+    token.renderFlags?.set({ refreshMesh: true });
   }
 }
 
@@ -185,10 +210,9 @@ async function applyIllusionUnsafe(token) {
   }
 
   if (isHiddenFrom(doc, game.user)) {
-    setHidden(token, true);
+    enforceHidden(token);
     return;
   }
-  setHidden(token, false);
 
   const targetSrc = resolveImage(doc, game.user) ?? doc.texture.src;
   if (!targetSrc || token._falseTokensSrc === targetSrc) return;
@@ -217,8 +241,19 @@ export function refreshAllTokenIllusions() {
   for (const token of canvas.tokens?.placeables ?? []) applyIllusion(token);
 }
 
+// Called on "setup", before the canvas is first drawn, so the initial draw of
+// every token already goes through these hooks.
 export function initIllusionRendering() {
-  Hooks.on("drawToken", (token) => applyIllusion(token));
+  patchTokenVisibility();
+
+  Hooks.on("drawToken", (token) => {
+    // A (re)draw builds a fresh mesh with the document's own texture and alpha,
+    // so whatever we applied to the old mesh is gone. Without resetting these,
+    // the "already applied" checks skipped re-applying an illusion after a redraw.
+    token._falseTokensSrc = null;
+    token._falseTokensAlpha = false;
+    applyIllusion(token);
+  });
   Hooks.on("refreshToken", (token) => applyIllusion(token));
 
   Hooks.on("updateToken", (tokenDocument, changes) => {
@@ -227,6 +262,10 @@ export function initIllusionRendering() {
     if (!token) return;
     // Force re-evaluation even if the resolved path happens to match the cached one.
     token._falseTokensSrc = null;
+    // A flag-only update doesn't make core refresh the token, so ask for it
+    // explicitly: this is what un-hides a token when invisible is turned off or
+    // swapped to illusion, and re-runs our refreshToken hook on every client.
+    requestVisibilityRefresh(token);
     applyIllusion(token);
   });
 

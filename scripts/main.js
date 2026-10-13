@@ -18,9 +18,14 @@ Hooks.once("init", () => {
   });
 });
 
+// Before the canvas is first drawn, so tokens are hidden/swapped from the very
+// first frame instead of only once something refreshes them after "ready".
+Hooks.once("setup", () => {
+  initIllusionRendering();
+});
+
 Hooks.once("ready", () => {
   console.log(`${MODULE_ID} | ready`);
-  initIllusionRendering();
   initIllusionHud();
   initIllusionCombatTracker();
 });
