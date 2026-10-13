@@ -67,6 +67,22 @@ export class IllusionConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  _onRender(context, options) {
+    super._onRender?.(context, options);
+    const select = this.element.querySelector('select[name="type"]');
+    select?.addEventListener("change", () => this.#applyTypeVisibility());
+    this.#applyTypeVisibility();
+  }
+
+  // Shows only the fields the selected type needs, without re-rendering, so a
+  // hidden field keeps its value (and is still submitted) when the type switches back.
+  #applyTypeVisibility() {
+    const isInvisible = this.element.querySelector('select[name="type"]')?.value === "invisible";
+    this.element.querySelectorAll(".false-tokens-illusion-only").forEach((el) => (el.hidden = isInvisible));
+    this.element.querySelectorAll(".false-tokens-invisible-only").forEach((el) => (el.hidden = !isInvisible));
+    this.setPosition({ height: "auto" });
+  }
+
   static async #onPickImage(event, target) {
     const fieldName = target.dataset.target;
     const input = this.element.querySelector(`input[name="${fieldName}"]`);
@@ -99,8 +115,8 @@ export class IllusionConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     await setIllusion(this.tokenDocument, {
       active: !!data.active,
       type: data.type === "invisible" ? "invisible" : "illusion",
-      // These fields are hidden (not submitted) when type is invisible, or always
-      // (trueImg) — don't blow away a previously-set value just because it's hidden.
+      // illusionImg is only hidden (still submitted) for invisible mode; trueImg has
+      // no field at all — never blow away a previously-set value that isn't in the form.
       illusionImg: data.illusionImg !== undefined ? data.illusionImg : (existing.illusionImg ?? ""),
       trueImg: existing.trueImg ?? "",
       fooled,

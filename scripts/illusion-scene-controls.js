@@ -23,9 +23,7 @@ export function initIllusionSceneControls() {
       order,
       button: true,
       visible: game.user.isGM,
-      // Registered under both names: different Foundry versions/tool types
-      // dispatch button clicks via one or the other, and having both costs nothing.
-      onClick: () => toggleAll(true),
+      // v13+ (incl. v14) calls onChange for button tools; onClick no longer exists.
       onChange: () => toggleAll(true),
     };
     tokenControls.tools["false-tokens-disable-all"] = {
@@ -35,7 +33,6 @@ export function initIllusionSceneControls() {
       order: order + 1,
       button: true,
       visible: game.user.isGM,
-      onClick: () => toggleAll(false),
       onChange: () => toggleAll(false),
     };
   });

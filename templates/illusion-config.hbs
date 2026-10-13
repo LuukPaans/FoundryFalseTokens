@@ -12,23 +12,23 @@
     </select>
   </div>
 
-  {{#unless isInvisible}}
-    <div class="form-group">
-      <label>{{localize "FALSETOKENS.IllusionImage"}}</label>
-      <div class="form-fields">
-        <input type="text" name="illusionImg" value="{{illusionImg}}"
-          placeholder="{{localize 'FALSETOKENS.IllusionImagePlaceholder'}}" />
-        <button type="button" data-action="pickIllusion" data-target="illusionImg">
-          <i class="fa-solid fa-file-image"></i>
-        </button>
-      </div>
-      <p class="hint">{{localize "FALSETOKENS.IllusionImageHint"}}</p>
+  {{!-- Always rendered so its value survives a type switch; only hidden for invisible mode. --}}
+  <div class="form-group false-tokens-illusion-only" {{#if isInvisible}}hidden{{/if}}>
+    <label>{{localize "FALSETOKENS.IllusionImage"}}</label>
+    <div class="form-fields">
+      <input type="text" name="illusionImg" value="{{illusionImg}}"
+        placeholder="{{localize 'FALSETOKENS.IllusionImagePlaceholder'}}" />
+      <button type="button" data-action="pickIllusion" data-target="illusionImg">
+        <i class="fa-solid fa-file-image"></i>
+      </button>
     </div>
-  {{/unless}}
+    <p class="hint">{{localize "FALSETOKENS.IllusionImageHint"}}</p>
+  </div>
 
   <fieldset class="false-tokens-user-list">
     <legend>
-      {{#if isInvisible}}{{localize "FALSETOKENS.LegendInvisible"}}{{else}}{{localize "FALSETOKENS.LegendIllusion"}}{{/if}}
+      <span class="false-tokens-illusion-only" {{#if isInvisible}}hidden{{/if}}>{{localize "FALSETOKENS.LegendIllusion"}}</span>
+      <span class="false-tokens-invisible-only" {{#unless isInvisible}}hidden{{/unless}}>{{localize "FALSETOKENS.LegendInvisible"}}</span>
     </legend>
     <div class="false-tokens-bulk-actions">
       <button type="button" data-action="allTrue">{{localize "FALSETOKENS.MarkEveryone"}}</button>

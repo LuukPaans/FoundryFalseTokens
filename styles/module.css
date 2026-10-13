@@ -38,3 +38,8 @@
   align-items: center;
   gap: 4px;
 }
+
+/* Foundry's form-group display rule would otherwise override the hidden attribute. */
+.false-tokens-config [hidden] {
+  display: none !important;
+}
